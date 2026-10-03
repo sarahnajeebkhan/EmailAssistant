@@ -1,0 +1,7 @@
+langchain[mcp]>=1.4.0
+langgraph>=1.0.0
+langgraph-checkpoint-postgres>=3.0.0
+fastapi>=0.115
+uvicorn[standard]>=0.34
+fastmcp>=2.0
+langchain-nvidia-ai-endpoints>=0.3.0
