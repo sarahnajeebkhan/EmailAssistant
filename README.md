@@ -24,7 +24,7 @@ pip install -r requirements.txt
 cp .env.example .env
 export EMAIL_MCP_URL=https://your-email-mcp.example.com/mcp
 export EMAIL_MCP_TOKEN=...
-export NVIDIA_API_KEY=your_nvidia_api_key
+export EMAIL_NVIDIA_API_KEY=your_nvidia_api_key
 uvicorn api:app --reload
 ```
 

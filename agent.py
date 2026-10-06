@@ -1,4 +1,3 @@
-import os
 from contextlib import asynccontextmanager
 from typing import Any
 
@@ -8,10 +7,7 @@ from langchain.agents.middleware import HumanInTheLoopMiddleware
 from langchain.mcp import MCPAdapter
 from langgraph.checkpoint.memory import InMemorySaver
 
-MODEL = os.getenv("EMAIL_AGENT_MODEL")
-MCP_URL = os.environ["EMAIL_MCP_URL"]
-MCP_TOKEN = os.getenv("EMAIL_MCP_TOKEN")
-NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
+from config import settings
 
 SYSTEM_PROMPT = """
 You are an email assistant. You can inspect the user's mailbox and, when explicitly asked,
@@ -34,23 +30,6 @@ def _is_send_tool(name: str) -> bool:
     return any(w in n for w in send_words) and any(w in n for w in email_words)
 
 
-def _create_nvidia_model():
-    from langchain_nvidia_ai_endpoints import ChatNVIDIA
-
-    if not NVIDIA_API_KEY:
-        raise ValueError("NVIDIA_API_KEY environment variable is required. Set it or override EMAIL_AGENT_MODEL to use a different LLM.")
-
-    return ChatNVIDIA(
-        model="nvidia/nemotron-3.5-lightning-30b-a3b",
-        api_key=NVIDIA_API_KEY,
-        temperature=1,
-        top_p=0.95,
-        max_tokens=16384,
-        reasoning_budget=16384,
-        chat_template_kwargs={"enable_thinking": True},
-    )
-
-
 class EmailAssistant:
     def __init__(self) -> None:
         self._agent = None
@@ -61,7 +40,11 @@ class EmailAssistant:
     async def lifespan(self):
         # MCPAdapter discovers the remote MCP server's tools and converts them to LangChain tools.
         # A bearer token is optional and depends on your MCP server.
-        self._client = Client(MCP_URL, auth=MCP_TOKEN) if MCP_TOKEN else Client(MCP_URL)
+        self._client = (
+            Client(settings.email_mcp_url, auth=settings.email_mcp_token)
+            if settings.email_mcp_token
+            else Client(settings.email_mcp_url)
+        )
         self._adapter = MCPAdapter(self._client)
         async with self._adapter:
             tools = await self._adapter.list_tools()
@@ -80,11 +63,7 @@ class EmailAssistant:
             # InMemorySaver is deliberately used for local development.
             # Replace with AsyncPostgresSaver / AsyncMongoDBSaver in production.
 
-            # Use NVIDIA as default model, or override if EMAIL_AGENT_MODEL is set
-            if MODEL is None:
-                model = _create_nvidia_model()
-            else:
-                model = MODEL
+            model = settings.get_model()
 
             self._agent = create_agent(
                 model=model,
@@ -95,7 +74,9 @@ class EmailAssistant:
                         interrupt_on=interrupt_on,
                         description_prefix="Email action requires approval",
                     )
-                ] if interrupt_on else [],
+                ]
+                if interrupt_on
+                else [],
                 checkpointer=InMemorySaver(),
             )
 

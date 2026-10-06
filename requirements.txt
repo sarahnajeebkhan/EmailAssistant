@@ -5,3 +5,4 @@ fastapi>=0.115
 uvicorn[standard]>=0.34
 fastmcp>=2.0
 langchain-nvidia-ai-endpoints>=0.3.0
+pydantic-settings>=2.0
