@@ -5,9 +5,13 @@ class Settings(BaseSettings):
     """Application configuration loaded from environment variables."""
 
     email_agent_model: str | None = None
-    email_mcp_url: str
-    email_mcp_token: str | None = None
     email_nvidia_api_key: str | None = None
+
+    # Google credentials configuration
+    google_credentials_path: str = "credentials.json"
+    google_token_path: str = "token.json"
+    google_api_key: str | None = None
+    google_cse_id: str | None = None
 
     model_config = SettingsConfigDict(
         env_prefix="EMAIL_",
